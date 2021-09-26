@@ -5,6 +5,8 @@ import email
 import re
 import warnings
 from pathlib import Path
+import pymarc
+import requests
 pd.options.mode.chained_assignment = None
 
 # folder path
@@ -59,38 +61,19 @@ inner_join_df2['Portfolio ID'] = inner_join_df2['Portfolio ID'].astype(str)
 inner_join_df2['MMS ID'] = inner_join_df2['MMS ID'].astype(str)
 inner_join_df2['ISBN_y'] = inner_join_df2['ISBN_y'].str[:13]
 inner_join_df3 = inner_join_df2[['Name', 'Portfolio ID', 'MMS ID', 'ISBN_y', 'title_x', 'URL']]
+# cuda filtering
+inner_join_df3['URL'] = inner_join_df3['URL'].str.replace('https://linkprotect.cudasvc.com/url?a=', '', regex=False)
+inner_join_df3['URL'] = inner_join_df3['URL'].str.replace('%3a', ':', regex=False)
+inner_join_df3['URL'] = inner_join_df3['URL'].str.replace('%2f', '/', regex=False)
+inner_join_df3['URL'] = inner_join_df3['URL'].str.replace('%3f', '?', regex=False)
+inner_join_df3['URL'] = inner_join_df3['URL'].str.replace('%3d', '=', regex=False)
+inner_join_df3['URL'] = inner_join_df3['URL'].str.replace('%26', '&', regex=False)
+inner_join_df3['URL'] = inner_join_df3['URL'].str.replace('&c=E,1.*', '', regex=True)
+# join and sort
 df4 = inner_join_df3.sort_values('URL')
 
 # export master list
 df4.to_excel(path1 + "/1EbookProcessing.xlsx", index=None)
-
-# export individual collections
-dfISBNurls = inner_join_df3[['ISBN_y', 'URL']]
-dfISBNurls['URL'] = dfISBNurls['URL'].str.replace('\n', '')
-dfCam = dfISBNurls[dfISBNurls.URL.str.contains('cambridge|/doi.org', case=False)]
-if dfCam.empty is False:
-    np.savetxt(path1 + "/2cambridge.txt", dfCam, fmt="%s", delimiter="\t")
-dfDG = dfISBNurls[dfISBNurls.URL.str.contains('degruyter', case=False)]
-if dfDG.empty is False:
-    np.savetxt(path1 + "/3degruyter.txt", dfDG, fmt="%s", delimiter="\t")
-dfEBS = dfISBNurls[dfISBNurls.URL.str.contains('ebscohost', case=False)]
-if dfEBS.empty is False:
-    np.savetxt(path1 + "/4ebsco.txt", dfEBS, fmt="%s", delimiter="\t")
-dfJSTOR = dfISBNurls[dfISBNurls.URL.str.contains('jstor', case=False)]
-if dfJSTOR.empty is False:
-    np.savetxt(path1 + "/5jstor.txt", dfJSTOR, fmt="%s", delimiter="\t")
-dfUPSO = dfISBNurls[dfISBNurls.URL.str.contains('/dx.doi.org', case=False)]
-if dfUPSO.empty is False:
-    np.savetxt(path1 + "/6upso.txt", dfUPSO, fmt="%s", delimiter="\t")
-dfmuse = dfISBNurls[dfISBNurls.URL.str.contains('muse.jhu.edu', case=False)]
-if dfmuse.empty is False:
-    np.savetxt(path1 + "/7projectmuse.txt", dfmuse, fmt="%s", delimiter="\t")
-dfPQ = dfISBNurls[dfISBNurls.URL.str.contains('proquest', case=False)]
-if dfPQ.empty is False:
-    np.savetxt(path1 + "/8proquest.txt", dfPQ, fmt="%s", delimiter="\t")
-dfTF = dfISBNurls[dfISBNurls.URL.str.contains('taylorfrancis', case=False)]
-if dfTF.empty is False:
-    np.savetxt(path1 + "/9taylorfrancis.txt", dfTF, fmt="%s", delimiter="\t")
 
 # export portfolios
 dfPorts = inner_join_df3[['Portfolio ID', 'URL']]
@@ -126,3 +109,116 @@ dfTFP = dfPorts[dfPorts.URL.str.contains('taylorfrancis', case=False)]
 if dfTFP.empty is False:
     np.savetxt(path1 + "/9taylorfrancisPORTS.txt", dfTFP['Portfolio ID'], fmt="%s", delimiter="\t",
                header="Portfolio ID", comments='')
+
+# export mrc
+if dfCam.empty is False:
+    dfCam = dfCam.values.tolist()
+    outputfile = open(path1 + '/2cambridge.mrc', 'wb')
+    for x in dfCam[0:]:
+        item_load = pymarc.Record(to_unicode=True, force_utf8=True)
+        isbn = x[0]
+        urlExport = x[1]
+        field_020 = pymarc.Field(tag='020', indicators=[' ', ' '], subfields=['a', str(isbn)])
+        field_856 = pymarc.Field(tag='856', indicators=[' ', ' '], subfields=['u', urlExport])
+        item_load.add_ordered_field(field_020)
+        item_load.add_ordered_field(field_856)
+        outputfile.write(item_load.as_marc())
+    outputfile.close()
+
+if dfDG.empty is False:
+    dfDG = dfDG.values.tolist()
+    outputfile = open(path1 + '/3degruyter.mrc', 'wb')
+    for x in dfDG[0:]:
+        item_load = pymarc.Record(to_unicode=True, force_utf8=True)
+        isbn = x[0]
+        urlExport = x[1]
+        field_020 = pymarc.Field(tag='020', indicators=[' ', ' '], subfields=['a', str(isbn)])
+        field_856 = pymarc.Field(tag='856', indicators=[' ', ' '], subfields=['u', urlExport])
+        item_load.add_ordered_field(field_020)
+        item_load.add_ordered_field(field_856)
+        outputfile.write(item_load.as_marc())
+    outputfile.close()
+
+if dfEBS.empty is False:
+    dfEBS = dfEBS.values.tolist()
+    outputfile = open(path1 + '/4ebsco.mrc', 'wb')
+    for x in dfEBS[0:]:
+        item_load = pymarc.Record(to_unicode=True, force_utf8=True)
+        isbn = x[0]
+        urlExport = x[1]
+        field_020 = pymarc.Field(tag='020', indicators=[' ', ' '], subfields=['a', str(isbn)])
+        field_856 = pymarc.Field(tag='856', indicators=[' ', ' '], subfields=['u', urlExport])
+        item_load.add_ordered_field(field_020)
+        item_load.add_ordered_field(field_856)
+        outputfile.write(item_load.as_marc())
+    outputfile.close()
+
+if dfJSTOR.empty is False:
+    dfJSTOR = dfJSTOR.values.tolist()
+    outputfile = open(path1 + '/5jstor.mrc', 'wb')
+    for x in dfJSTOR[0:]:
+        item_load = pymarc.Record(to_unicode=True, force_utf8=True)
+        isbn = x[0]
+        urlExport = x[1]
+        field_020 = pymarc.Field(tag='020', indicators=[' ', ' '], subfields=['a', str(isbn)])
+        field_856 = pymarc.Field(tag='856', indicators=[' ', ' '], subfields=['u', urlExport])
+        item_load.add_ordered_field(field_020)
+        item_load.add_ordered_field(field_856)
+        outputfile.write(item_load.as_marc())
+    outputfile.close()
+
+if dfUPSO.empty is False:
+    dfUPSO = dfUPSO.values.tolist()
+    outputfile = open(path1 + '/6upso.mrc', 'wb')
+    for x in dfUPSO[0:]:
+        item_load = pymarc.Record(to_unicode=True, force_utf8=True)
+        isbn = x[0]
+        urlExport = x[1]
+        field_020 = pymarc.Field(tag='020', indicators=[' ', ' '], subfields=['a', str(isbn)])
+        field_856 = pymarc.Field(tag='856', indicators=[' ', ' '], subfields=['u', urlExport])
+        item_load.add_ordered_field(field_020)
+        item_load.add_ordered_field(field_856)
+        outputfile.write(item_load.as_marc())
+    outputfile.close()
+
+if dfmuse.empty is False:
+    dfmuse = dfmuse.values.tolist()
+    outputfile = open(path1 + '/7projectmuse.mrc', 'wb')
+    for x in dfmuse[0:]:
+        item_load = pymarc.Record(to_unicode=True, force_utf8=True)
+        isbn = x[0]
+        urlExport = x[1]
+        field_020 = pymarc.Field(tag='020', indicators=[' ', ' '], subfields=['a', str(isbn)])
+        field_856 = pymarc.Field(tag='856', indicators=[' ', ' '], subfields=['u', urlExport])
+        item_load.add_ordered_field(field_020)
+        item_load.add_ordered_field(field_856)
+        outputfile.write(item_load.as_marc())
+    outputfile.close()
+
+if dfPQ.empty is False:
+    dfPQ = dfPQ.values.tolist()
+    outputfile = open(path1 + '/8proquest.mrc', 'wb')
+    for x in dfPQ[0:]:
+        item_load = pymarc.Record(to_unicode=True, force_utf8=True)
+        isbn = x[0]
+        urlExport = x[1]
+        field_020 = pymarc.Field(tag='020', indicators=[' ', ' '], subfields=['a', str(isbn)])
+        field_856 = pymarc.Field(tag='856', indicators=[' ', ' '], subfields=['u', urlExport])
+        item_load.add_ordered_field(field_020)
+        item_load.add_ordered_field(field_856)
+        outputfile.write(item_load.as_marc())
+    outputfile.close()
+
+if dfTF.empty is False:
+    dfTF = dfTF.values.tolist()
+    outputfile = open(path1 + '/9taylorfrancis.mrc', 'wb')
+    for x in dfTF[0:]:
+        item_load = pymarc.Record(to_unicode=True, force_utf8=True)
+        isbn = x[0]
+        urlExport = x[1]
+        field_020 = pymarc.Field(tag='020', indicators=[' ', ' '], subfields=['a', str(isbn)])
+        field_856 = pymarc.Field(tag='856', indicators=[' ', ' '], subfields=['u', urlExport])
+        item_load.add_ordered_field(field_020)
+        item_load.add_ordered_field(field_856)
+        outputfile.write(item_load.as_marc())
+    outputfile.close()
