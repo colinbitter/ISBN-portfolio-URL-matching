@@ -6,7 +6,6 @@ import re
 import warnings
 from pathlib import Path
 import pymarc
-import requests
 pd.options.mode.chained_assignment = None
 
 # folder path
@@ -15,7 +14,7 @@ path1 = downloads_path
 
 # connect to inbox
 imap_server = imaplib.IMAP4_SSL(host='imap.gmail.com')
-imap_server.login('x', 'y')
+imap_server.login('x', 'y)
 imap_server.select()
 
 dff1 = []
@@ -73,7 +72,21 @@ inner_join_df3['URL'] = inner_join_df3['URL'].str.replace('&c=E,1.*', '', regex=
 df4 = inner_join_df3.sort_values('URL')
 
 # export master list
-df4.to_excel(path1 + "/1EbookProcessing.xlsx", index=None)
+df4.to_excel(path1 + "/01EbookProcessing.xlsx", index=None)
+
+# identify URLs
+dfISBNurls = inner_join_df3[['ISBN_y', 'URL']]
+dfISBNurls['URL'] = dfISBNurls['URL'].str.replace('\n', '')
+dfCam = dfISBNurls[dfISBNurls.URL.str.contains('cambridge|/doi.org', case=False)]
+dfDG = dfISBNurls[dfISBNurls.URL.str.contains('degruyter', case=False)]
+dfEBS = dfISBNurls[dfISBNurls.URL.str.contains('ebscohost', case=False)]
+dfJSTOR = dfISBNurls[dfISBNurls.URL.str.contains('jstor', case=False)]
+dfUPSO = dfISBNurls[dfISBNurls.URL.str.contains('/dx.doi.org', case=False)]
+dfmuse = dfISBNurls[dfISBNurls.URL.str.contains('muse.jhu.edu', case=False)]
+dfPQ = dfISBNurls[dfISBNurls.URL.str.contains('proquest', case=False)]
+dfTF = dfISBNurls[dfISBNurls.URL.str.contains('taylorfrancis', case=False)]
+dfSCI = dfISBNurls[dfISBNurls.URL.str.contains('sciencedirect', case=False)]
+dfW = dfISBNurls[dfISBNurls.URL.str.contains('wiley', case=False)]
 
 # export portfolios
 dfPorts = inner_join_df3[['Portfolio ID', 'URL']]
@@ -109,11 +122,19 @@ dfTFP = dfPorts[dfPorts.URL.str.contains('taylorfrancis', case=False)]
 if dfTFP.empty is False:
     np.savetxt(path1 + "/9taylorfrancisPORTS.txt", dfTFP['Portfolio ID'], fmt="%s", delimiter="\t",
                header="Portfolio ID", comments='')
+dfSCIP = dfPorts[dfPorts.URL.str.contains('sciencedirect', case=False)]
+if dfSCIP.empty is False:
+    np.savetxt(path1 + "/10sciencedirectPORTS.txt", dfSCIP['Portfolio ID'], fmt="%s", delimiter="\t",
+               header="Portfolio ID", comments='')
+dfWP = dfPorts[dfPorts.URL.str.contains('wiley', case=False)]
+if dfWP.empty is False:
+    np.savetxt(path1 + "/11wileyPORTS.txt", dfWP['Portfolio ID'], fmt="%s", delimiter="\t",
+               header="Portfolio ID", comments='')
 
 # export mrc
 if dfCam.empty is False:
     dfCam = dfCam.values.tolist()
-    outputfile = open(path1 + '/2cambridge.mrc', 'wb')
+    outputfile = open(path1 + '/02cambridge.mrc', 'wb')
     for x in dfCam[0:]:
         item_load = pymarc.Record(to_unicode=True, force_utf8=True)
         isbn = x[0]
@@ -127,7 +148,7 @@ if dfCam.empty is False:
 
 if dfDG.empty is False:
     dfDG = dfDG.values.tolist()
-    outputfile = open(path1 + '/3degruyter.mrc', 'wb')
+    outputfile = open(path1 + '/03degruyter.mrc', 'wb')
     for x in dfDG[0:]:
         item_load = pymarc.Record(to_unicode=True, force_utf8=True)
         isbn = x[0]
@@ -141,7 +162,7 @@ if dfDG.empty is False:
 
 if dfEBS.empty is False:
     dfEBS = dfEBS.values.tolist()
-    outputfile = open(path1 + '/4ebsco.mrc', 'wb')
+    outputfile = open(path1 + '/04ebsco.mrc', 'wb')
     for x in dfEBS[0:]:
         item_load = pymarc.Record(to_unicode=True, force_utf8=True)
         isbn = x[0]
@@ -155,7 +176,7 @@ if dfEBS.empty is False:
 
 if dfJSTOR.empty is False:
     dfJSTOR = dfJSTOR.values.tolist()
-    outputfile = open(path1 + '/5jstor.mrc', 'wb')
+    outputfile = open(path1 + '/05jstor.mrc', 'wb')
     for x in dfJSTOR[0:]:
         item_load = pymarc.Record(to_unicode=True, force_utf8=True)
         isbn = x[0]
@@ -169,7 +190,7 @@ if dfJSTOR.empty is False:
 
 if dfUPSO.empty is False:
     dfUPSO = dfUPSO.values.tolist()
-    outputfile = open(path1 + '/6upso.mrc', 'wb')
+    outputfile = open(path1 + '/06upso.mrc', 'wb')
     for x in dfUPSO[0:]:
         item_load = pymarc.Record(to_unicode=True, force_utf8=True)
         isbn = x[0]
@@ -183,7 +204,7 @@ if dfUPSO.empty is False:
 
 if dfmuse.empty is False:
     dfmuse = dfmuse.values.tolist()
-    outputfile = open(path1 + '/7projectmuse.mrc', 'wb')
+    outputfile = open(path1 + '/07projectmuse.mrc', 'wb')
     for x in dfmuse[0:]:
         item_load = pymarc.Record(to_unicode=True, force_utf8=True)
         isbn = x[0]
@@ -197,7 +218,7 @@ if dfmuse.empty is False:
 
 if dfPQ.empty is False:
     dfPQ = dfPQ.values.tolist()
-    outputfile = open(path1 + '/8proquest.mrc', 'wb')
+    outputfile = open(path1 + '/08proquest.mrc', 'wb')
     for x in dfPQ[0:]:
         item_load = pymarc.Record(to_unicode=True, force_utf8=True)
         isbn = x[0]
@@ -211,8 +232,36 @@ if dfPQ.empty is False:
 
 if dfTF.empty is False:
     dfTF = dfTF.values.tolist()
-    outputfile = open(path1 + '/9taylorfrancis.mrc', 'wb')
+    outputfile = open(path1 + '/09taylorfrancis.mrc', 'wb')
     for x in dfTF[0:]:
+        item_load = pymarc.Record(to_unicode=True, force_utf8=True)
+        isbn = x[0]
+        urlExport = x[1]
+        field_020 = pymarc.Field(tag='020', indicators=[' ', ' '], subfields=['a', str(isbn)])
+        field_856 = pymarc.Field(tag='856', indicators=[' ', ' '], subfields=['u', urlExport])
+        item_load.add_ordered_field(field_020)
+        item_load.add_ordered_field(field_856)
+        outputfile.write(item_load.as_marc())
+    outputfile.close()
+
+if dfSCI.empty is False:
+    dfSCI = dfSCI.values.tolist()
+    outputfile = open(path1 + '/10sciencedirect.mrc', 'wb')
+    for x in dfSCI[0:]:
+        item_load = pymarc.Record(to_unicode=True, force_utf8=True)
+        isbn = x[0]
+        urlExport = x[1]
+        field_020 = pymarc.Field(tag='020', indicators=[' ', ' '], subfields=['a', str(isbn)])
+        field_856 = pymarc.Field(tag='856', indicators=[' ', ' '], subfields=['u', urlExport])
+        item_load.add_ordered_field(field_020)
+        item_load.add_ordered_field(field_856)
+        outputfile.write(item_load.as_marc())
+    outputfile.close()
+
+if dfW.empty is False:
+    dfW = dfW.values.tolist()
+    outputfile = open(path1 + '/11wiley.mrc', 'wb')
+    for x in dfW[0:]:
         item_load = pymarc.Record(to_unicode=True, force_utf8=True)
         isbn = x[0]
         urlExport = x[1]
